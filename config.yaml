@@ -1,0 +1,38 @@
+save:
+  dir: "./data"
+sources:
+  smtp:
+    - name: local_smtp
+      enabled: true
+
+      address: ":25"
+      domain: "0.0.0.0"
+      read_timeout: 10s
+      write_timeout: 10s
+      max_message_bytes: 10485760  # 10MB
+      max_recipients: 50
+      allow_insecure_auth: true
+
+  # imap:
+  #   - name: gmail_imap
+  #     enabled: true
+  #     server: "imap.gmail.com:993"
+  #     username: "your-email@gmail.com"
+  #     password: "your-app-password"
+  #     tls: true
+  #     check_interval: 30s
+
+  # pop3:
+  #   - name: outlook_pop3
+  #     enabled: true
+  #     server: "outlook.office365.com:995"
+  #     username: "your-email@outlook.com"
+  #     password: "your-password"
+  #     tls: true
+  #     check_interval: 30s
+
+  # mailhog:
+  #   - name: local_mailhog
+  #     enabled: true
+  #     api_url: "http://localhost:8025"
+  #     check_interval: 5s 

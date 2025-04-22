@@ -2,6 +2,7 @@ package sources
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"time"
@@ -116,6 +117,12 @@ func (s *Session) Data(r io.Reader) error {
 	mail, err := utils.ParseMail(buf)
 	if err != nil {
 		return err
+	}
+	if mail.ID == "" {
+		mail.ID = mail.MessageID
+	}
+	if mail.ID == "" {
+		mail.ID = fmt.Sprintf("%s:%s:%s", mail.Date, mail.From[0].String(), mail.To[0].String())
 	}
 
 	// 分发邮件

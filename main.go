@@ -8,6 +8,7 @@ import (
 
 	"github.com/iamlongalong/listenmail/handler"
 	"github.com/iamlongalong/listenmail/pkg/dispatcher"
+	"github.com/iamlongalong/listenmail/pkg/handlers"
 	"github.com/iamlongalong/listenmail/pkg/sources"
 	"github.com/iamlongalong/listenmail/pkg/types"
 	"gopkg.in/yaml.v3"
@@ -30,7 +31,11 @@ func main() {
 	defer disp.Close() // 确保在程序退出时关闭dispatcher
 
 	// Add example handler
-	if err := disp.AddHandlers(handler.SaveHandler(config.Save.Dir), handler.CursorCodeHandler()); err != nil {
+	if err := disp.AddHandlers(
+		handler.SaveHandler(config.Save.Dir),
+		handler.CursorCodeHandler(),
+		handlers.NewLogHandler(),
+	); err != nil {
 		log.Fatalf("Error adding handler: %v", err)
 	}
 

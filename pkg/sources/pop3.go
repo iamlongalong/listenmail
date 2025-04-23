@@ -231,6 +231,7 @@ func (s *POP3Source) checkNewMessages() error {
 
 		// 设置唯一ID
 		mail.ID = fmt.Sprintf("pop3-%s", msg.ID)
+		mail.Source = s.Name()
 
 		if err := s.dispatcher.Dispatch(mail); err != nil {
 			return err

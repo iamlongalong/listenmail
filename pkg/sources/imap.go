@@ -234,6 +234,7 @@ func (s *IMAPSource) checkNewMessages() error {
 
 		// Set a unique ID for the message
 		mail.ID = fmt.Sprintf("imap-%d-%d", s.uidValidity, msg.Uid)
+		mail.Source = s.Name()
 
 		if err := s.dispatcher.Dispatch(mail); err != nil {
 			return err

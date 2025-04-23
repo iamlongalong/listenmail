@@ -16,6 +16,18 @@ type Handler struct {
 	condition Condition
 }
 
+func WrapHandlers(handles ...func(*types.Mail) error) func(*types.Mail) error {
+	return func(m *types.Mail) error {
+		for _, h := range handles {
+			err := h(m)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
 // NewHandler 创建一个新的处理器
 func NewHandler(handle func(*types.Mail) error, condition Condition) *Handler {
 	if condition == nil {

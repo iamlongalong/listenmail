@@ -39,6 +39,7 @@ func NewSMTPSource(config *types.SMTPConfig, dispatcher types.Dispatcher) (*SMTP
 	}
 
 	backend := &Backend{
+		sourceName: s.Name(),
 		dispatcher: dispatcher,
 	}
 
@@ -76,17 +77,20 @@ func (s *SMTPSource) Name() string {
 
 // Backend implements SMTP server methods
 type Backend struct {
+	sourceName string
 	dispatcher types.Dispatcher
 }
 
 func (bkd *Backend) NewSession(_ *smtp.Conn) (smtp.Session, error) {
 	return &Session{
+		sourceName: bkd.sourceName,
 		dispatcher: bkd.dispatcher,
 	}, nil
 }
 
 // Session implements SMTP session
 type Session struct {
+	sourceName string
 	dispatcher types.Dispatcher
 	from       string
 	to         []string
@@ -121,9 +125,10 @@ func (s *Session) Data(r io.Reader) error {
 	if mail.ID == "" {
 		mail.ID = mail.MessageID
 	}
-	if mail.ID == "" {
+	if mail.ID == "" && len(mail.From) > 0 && len(mail.To) > 0 {
 		mail.ID = fmt.Sprintf("%s:%s:%s", mail.Date, mail.From[0].String(), mail.To[0].String())
 	}
+	mail.Source = s.sourceName
 
 	// 分发邮件
 	return s.dispatcher.Dispatch(mail)

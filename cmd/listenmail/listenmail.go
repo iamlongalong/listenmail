@@ -4,21 +4,31 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 
 	"github.com/iamlongalong/listenmail/handler"
 	"github.com/iamlongalong/listenmail/pkg/dispatcher"
 	"github.com/iamlongalong/listenmail/pkg/handlers"
+	"github.com/iamlongalong/listenmail/pkg/server"
 	"github.com/iamlongalong/listenmail/pkg/sources"
 	"github.com/iamlongalong/listenmail/pkg/types"
 	"gopkg.in/yaml.v3"
 )
 
 func main() {
+	if _, err := os.Stat("config.yaml"); os.IsNotExist(err) {
+		err = os.WriteFile("config.yaml", []byte(defaultConfig), os.ModePerm)
+		if err != nil {
+			log.Fatalf("Error write default config: %s", err)
+			return
+		}
+	}
 	// Read configuration
 	data, err := os.ReadFile("config.yaml")
 	if err != nil {
 		log.Fatalf("Error reading config: %v", err)
+		return
 	}
 
 	var config types.ConfigFile
@@ -32,9 +42,9 @@ func main() {
 
 	// Add example handler
 	if err := disp.AddHandlers(
+		handlers.NewLogHandler(),
 		handler.SaveHandler(config.Save.Dir),
 		handler.CursorCodeHandler(),
-		handlers.NewLogHandler(),
 	); err != nil {
 		log.Fatalf("Error adding handler: %v", err)
 	}
@@ -110,6 +120,24 @@ func main() {
 		log.Fatal("No sources were started")
 	}
 
+	s, err := server.New(server.Config{
+		DBPath:        path.Join(config.Save.Dir, "emails.db"),
+		AttachmentDir: path.Join(config.Save.Dir, "attachments"),
+		Username:      config.Server.Username,
+		Password:      config.Server.Password,
+	})
+	if err != nil {
+		log.Fatalf("create server fail: %s", err)
+		return
+	}
+
+	go func() {
+		err = s.Run(config.Server.Addr)
+		if err != nil {
+			log.Fatalf("run server fail: %s", err)
+		}
+	}()
+
 	log.Println("listener is running...")
 
 	// Wait for interrupt signal
@@ -119,6 +147,10 @@ func main() {
 
 	log.Println("Shutting down...")
 
+	if err := s.Close(); err != nil {
+		log.Printf("Error stopping server: %v", err)
+	}
+
 	// Stop all sources
 	for _, src := range activeSources {
 		if err := src.Stop(); err != nil {
@@ -126,3 +158,23 @@ func main() {
 		}
 	}
 }
+
+var defaultConfig = `server:
+  addr: "0.0.0.0:80"
+  username: "admin"
+  password: "admin"
+save:
+  dir: "./data"
+sources:
+  smtp:
+    - name: local_smtp
+      enabled: true
+
+      address: ":25"
+      domain: "0.0.0.0"
+      read_timeout: 10s
+      write_timeout: 10s
+      max_message_bytes: 10485760  # 10MB
+      max_recipients: 50
+      allow_insecure_auth: true
+`

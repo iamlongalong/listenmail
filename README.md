@@ -19,7 +19,7 @@ ListenMail 是一个灵活的邮件监听和分发工具，支持多种邮件协
 ## 安装
 
 ```bash
-go get github.com/iamlongalong/listenmail
+go install github.com/iamlongalong/listenmail/cmd/listenmail@latest
 ```
 
 ## 配置
@@ -27,29 +27,48 @@ go get github.com/iamlongalong/listenmail
 创建 `config.yaml` 文件：
 
 ```yaml
+server:
+  addr: "0.0.0.0:80"
+  username: "admin"
+  password: "admin"
+save:
+  dir: "./data"
 sources:
-  - type: smtp
-    name: local_smtp
-    enabled: true
-    settings:
+  smtp:
+    - name: local_smtp
+      enabled: true
+
       address: ":25"
-      domain: "localhost"
+      domain: "0.0.0.0"
+      read_timeout: 10s
+      write_timeout: 10s
+      max_message_bytes: 10485760  # 10MB
+      max_recipients: 50
+      allow_insecure_auth: true
 
-  - type: imap
-    name: gmail_imap
-    enabled: true
-    settings:
-      server: "imap.gmail.com:993"
-      username: "your-email@gmail.com"
-      password: "your-app-password"
+  # imap:
+  #   - name: gmail_imap
+  #     enabled: true
+  #     server: "imap.gmail.com:993"
+  #     username: "your-email@gmail.com"
+  #     password: "your-app-password"
+  #     tls: true
+  #     check_interval: 30s
 
-  - type: pop3
-    name: outlook_pop3
-    enabled: true
-    settings:
-      server: "outlook.office365.com:995"
-      username: "your-email@outlook.com"
-      password: "your-password"
+  # pop3:
+  #   - name: outlook_pop3
+  #     enabled: true
+  #     server: "outlook.office365.com:995"
+  #     username: "your-email@outlook.com"
+  #     password: "your-password"
+  #     tls: true
+  #     check_interval: 30s
+
+  # mailhog:
+  #   - name: local_mailhog
+  #     enabled: true
+  #     api_url: "http://localhost:8025"
+  #     check_interval: 5s 
 ```
 
 ## 使用示例
@@ -73,6 +92,8 @@ func (h *MyHandler) Match(mail *message.Entity) bool {
 }
 ```
 
+> pkg/handlers 下提供了多种 condition 和常用的 handler
+
 2. 注册处理器：
 
 ```go
@@ -83,16 +104,27 @@ disp.AddHandler(&MyHandler{})
 ## 构建和运行
 
 ```bash
-go build
-./listenmail
+go run cmd/listenmail
 ```
+
+## web 页面
+启动后，可以在 http://localhost/ 看到，basic auth 在 config.yaml 中配置
 
 ## 注意事项
 
-1. SMTP 服务器可能需要 root 权限才能监听 25 端口
-2. 使用 Gmail IMAP 时需要使用应用专用密码
-3. 某些邮件服务可能需要特殊的安全设置
+SMTP 服务器可能需要 root 权限才能监听 25 端口
+
+## DNS 设置 (只用于接收)
+1. 域名映射到 ip: A domain ip (你的服务器直接 http 访问的域名)
+2. 邮箱域名映射到普通域名: MX mail_domain domain (从邮件域名到 http 访问的域名，可以相同)
+
+## ssh 做服务端口映射
+目的是只用服务器的 25 端口做转发，实际的代码运行在本地的，便于做 debug 之类的
+
+1. 保证服务器的 25 端口入网开放
+2. 保证 sshd 的 `AllowTcpForwarding yes` 和 `GatewayPorts yes` 配置，并 `systemctl restart ssh` 重启
+3. 使用 `ssh -R 25:0.0.0.0:25 root@xx.xx.xx.xx` 来把远端的 25 端口导入到本地的 25 端口
 
 ## 许可证
 
-MIT License 
+MIT License

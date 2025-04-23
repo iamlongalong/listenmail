@@ -38,27 +38,34 @@ func SaveHandler(dir string) types.Handler {
 func CursorCodeHandler() types.Handler {
 	return handlers.NewHandler(
 		// 处理函数
-		func(mail *types.Mail) error {
-			// 提取纯文本内容
-			content := utils.ToPlainText(mail)
+		handlers.WrapHandlers(
+			func(m *types.Mail) error {
+				log.Printf("in cursor handler: %+v", m)
+				return nil
+			},
+			func(mail *types.Mail) error {
+				// 提取纯文本内容
+				content := utils.ToPlainText(mail)
 
-			// 查找并提取代码块
-			codeBlocks := extractCodeBlocks(content)
-			if len(codeBlocks) > 0 {
-				log.Printf("Found %d code blocks in email: %s", len(codeBlocks), mail.Subject)
-				for i, code := range codeBlocks {
-					log.Printf("Code block %d:\n%s\n", i+1, code)
+				// 查找并提取代码块
+				codeBlocks := extractCodeBlocks(content)
+				if len(codeBlocks) > 0 {
+					log.Printf("Found %d code blocks in email: %s", len(codeBlocks), mail.Subject)
+					for i, code := range codeBlocks {
+						log.Printf("Code block %d:\n%s\n", i+1, code)
+					}
 				}
-			}
 
-			return nil
-		},
+				return nil
+			},
+		),
 		// 匹配条件：组合多个条件
 		handlers.And(
 			// 发件人是 Cursor 相关的邮件地址
 			handlers.Or(
 				handlers.From(".*@cursor.so"),
 				handlers.From(".*@cursor.sh"),
+				handlers.From(".*@cursor.com"),
 				handlers.Subject(".*\\[Cursor\\].*"),
 			),
 			// 确保邮件内容不为空

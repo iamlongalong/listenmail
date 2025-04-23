@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mail Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100">
+    <div class="max-w-5xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <!-- Back Button -->
+        <div class="mb-6">
+            <button onclick="location.href='/'" class="flex items-center text-gray-600 hover:text-gray-900">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                返回列表
+            </button>
+        </div>
+
+        <!-- Email Header -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h1 id="subject" class="text-2xl font-bold text-gray-900 mb-4"></h1>
+            <div class="space-y-2">
+                <div class="flex items-start">
+                    <span class="w-20 flex-shrink-0 text-gray-500">发件人：</span>
+                    <span id="from" class="text-gray-900"></span>
+                </div>
+                <div class="flex items-start">
+                    <span class="w-20 flex-shrink-0 text-gray-500">收件人：</span>
+                    <span id="to" class="text-gray-900"></span>
+                </div>
+                <div id="cc-container" class="flex items-start hidden">
+                    <span class="w-20 flex-shrink-0 text-gray-500">抄送：</span>
+                    <span id="cc" class="text-gray-900"></span>
+                </div>
+                <div class="flex items-start">
+                    <span class="w-20 flex-shrink-0 text-gray-500">时间：</span>
+                    <span id="date" class="text-gray-900"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Tabs -->
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="flex -mb-px">
+                    <button id="tab-text" class="px-6 py-4 text-sm font-medium text-primary border-b-2 border-primary">
+                        文本内容
+                    </button>
+                    <button id="tab-html" class="px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        HTML内容
+                    </button>
+                    <button id="tab-raw" class="px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        原始内容
+                    </button>
+                </nav>
+            </div>
+            <div class="p-6">
+                <div id="content-text" class="whitespace-pre-wrap"></div>
+                <div id="content-html" class="hidden"></div>
+                <div id="content-raw" class="hidden">
+                    <pre class="text-sm text-gray-800 overflow-x-auto"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attachments -->
+        <div id="attachments-container" class="bg-white rounded-lg shadow-sm p-6 hidden">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">附件</h2>
+            <div id="attachments" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <!-- Attachments will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取邮件详情
+        async function fetchMailDetails(id) {
+            try {
+                const response = await fetch(`/api/mails/${id}`);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching mail details:', error);
+                return null;
+            }
+        }
+
+        // 渲染邮件详情
+        function renderMailDetails(mail) {
+            // 设置标题
+            document.title = mail.subject || '无主题';
+            document.getElementById('subject').textContent = mail.subject || '(无主题)';
+
+            // 设置发件人和收件人
+            document.getElementById('from').textContent = mail.from.map(f => `${f.name} <${f.address}>`).join(', ');
+            document.getElementById('to').textContent = mail.to.map(f => `${f.name} <${f.address}>`).join(', ');
+
+            // 设置抄送
+            if (mail.cc && mail.cc.length > 0) {
+                document.getElementById('cc-container').classList.remove('hidden');
+                document.getElementById('cc').textContent = mail.cc.map(f => `${f.name} <${f.address}>`).join(', ');
+            }
+
+            // 设置时间
+            document.getElementById('date').textContent = new Date(mail.date).toLocaleString();
+
+            // 设置内容
+            document.getElementById('content-text').textContent = mail.text_content || '(无文本内容)';
+            document.getElementById('content-html').innerHTML = mail.html_content || '(无HTML内容)';
+            document.getElementById('content-raw').querySelector('pre').textContent = mail.raw_mail || '(无原始内容)';
+
+            // 设置附件
+            if (mail.attachments && mail.attachments.length > 0) {
+                document.getElementById('attachments-container').classList.remove('hidden');
+                const attachmentsContainer = document.getElementById('attachments');
+                attachmentsContainer.innerHTML = mail.attachments?.map(att => `
+                    <div class="flex items-center p-4 border rounded-lg">
+                        <svg class="w-8 h-8 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                        </svg>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900 truncate">
+                                ${att.filename}
+                            </p>
+                            <p class="text-sm text-gray-500">
+                                ${formatFileSize(att.size)}
+                            </p>
+                        </div>
+                        <a href="/api/attachments/${att.id}" download="${att.filename}" 
+                           class="ml-4 flex-shrink-0 text-primary hover:text-blue-600">
+                            下载
+                        </a>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 处理标签切换
+        function setupTabs() {
+            const tabs = {
+                'tab-text': 'content-text',
+                'tab-html': 'content-html',
+                'tab-raw': 'content-raw'
+            };
+
+            for (const [tabId, contentId] of Object.entries(tabs)) {
+                document.getElementById(tabId).addEventListener('click', () => {
+                    // 更新标签样式
+                    Object.keys(tabs).forEach(id => {
+                        const tab = document.getElementById(id);
+                        if (id === tabId) {
+                            tab.classList.remove('text-gray-500');
+                            tab.classList.add('text-primary', 'border-b-2', 'border-primary');
+                        } else {
+                            tab.classList.remove('text-primary', 'border-b-2', 'border-primary');
+                            tab.classList.add('text-gray-500');
+                        }
+                    });
+
+                    // 显示对应内容
+                    Object.values(tabs).forEach(id => {
+                        document.getElementById(id).classList.toggle('hidden', id !== contentId);
+                    });
+                });
+            }
+        }
+
+        // 页面加载时获取邮件详情
+        window.addEventListener('load', async () => {
+            setupTabs();
+            
+            // 从URL获取邮件ID
+            const id = window.location.pathname.split('/').pop();
+            const mail = await fetchMailDetails(id);
+            if (mail) {
+                renderMailDetails(mail);
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -169,6 +169,7 @@ func (s *MailHogSource) checkNewMessages() error {
 
 		// Set message ID from MailHog
 		mail.ID = string(msg.ID)
+		mail.Source = s.Name()
 
 		if err := s.dispatcher.Dispatch(mail); err != nil {
 			return fmt.Errorf("dispatch error: %v", err)

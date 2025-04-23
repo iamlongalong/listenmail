@@ -1,3 +1,7 @@
+server:
+  addr: "0.0.0.0:80"
+  username: "admin"
+  password: "admin"
 save:
   dir: "./data"
 sources:

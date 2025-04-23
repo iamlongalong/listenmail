@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mail Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white shadow-lg">
+            <div class="p-4">
+                <h1 class="text-2xl font-bold text-gray-800">Mail Manager</h1>
+            </div>
+            <nav class="mt-4">
+                <a href="/" class="flex items-center px-4 py-2 text-gray-700 bg-gray-100">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                    </svg>
+                    收件箱
+                </a>
+                <!-- 由于先没有其他两个部分，所以先不展示 -->
+                <!-- <a href="/" class="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    已发送
+                </a>
+                <a href="/" class="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    已删除
+                </a> -->
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Search Bar -->
+            <div class="bg-white shadow-sm">
+                <div class="p-4">
+                    <div class="flex space-x-4">
+                        <input type="text" placeholder="搜索邮件..." class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                        <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                            搜索
+                        </button>
+                    </div>
+                    <div class="flex space-x-4 mt-4">
+                        <input type="date" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                        <input type="date" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                        <select class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="">所有邮件</option>
+                            <option value="from">按发件人</option>
+                            <option value="subject">按主题</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email List -->
+            <div class="flex-1 overflow-y-auto bg-gray-50 p-4">
+                <div id="mailList" class="space-y-4">
+                    <!-- Mail items will be inserted here by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="bg-white border-t px-4 py-3 flex items-center justify-between">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    <button class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        上一页
+                    </button>
+                    <button class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        下一页
+                    </button>
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            显示第 <span class="font-medium">1</span> 到 <span class="font-medium">20</span> 条，
+                            共 <span class="font-medium">50</span> 条
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                            <button class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                上一页
+                            </button>
+                            <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                1
+                            </button>
+                            <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                2
+                            </button>
+                            <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                3
+                            </button>
+                            <button class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                下一页
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取邮件列表数据
+        async function fetchMails(page = 1, pageSize = 20) {
+            try {
+                const response = await fetch(`/api/mails?page=${page}&page_size=${pageSize}`);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching mails:', error);
+                return null;
+            }
+        }
+
+        // 渲染邮件列表
+        function renderMailList(mails) {
+            const mailList = document.getElementById('mailList');
+            mailList.innerHTML = mails.map(mail => `
+                <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow cursor-pointer" 
+                     onclick="location.href='/mail/${mail.id}'">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900">${mail.subject || '(无主题)'}</h3>
+                            <p class="text-sm text-gray-500">
+                                ${mail.from.map(f => f.name || f.address).join(', ')}
+                            </p>
+                        </div>
+                        <span class="text-sm text-gray-500">
+                            ${new Date(mail.date).toLocaleString()}
+                        </span>
+                    </div>
+                    <p class="mt-2 text-gray-600 line-clamp-2">${mail.text_content || mail.html_content || ''}</p>
+                    ${mail.attachments?.length ? `
+                        <div class="mt-2 flex items-center text-sm text-gray-500">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                            </svg>
+                            ${mail.attachments?.length || 0} 个附件
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        // 页面加载时获取邮件列表
+        window.addEventListener('load', async () => {
+            const data = await fetchMails();
+            if (data) {
+                renderMailList(data.data);
+            }
+        });
+    </script>
+</body>
+</html> 

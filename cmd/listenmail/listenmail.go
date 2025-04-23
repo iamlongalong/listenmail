@@ -18,6 +18,7 @@ import (
 
 func main() {
 	if _, err := os.Stat("config.yaml"); os.IsNotExist(err) {
+		log.Printf("config.yaml not found, writing default.")
 		err = os.WriteFile("config.yaml", []byte(defaultConfig), os.ModePerm)
 		if err != nil {
 			log.Fatalf("Error write default config: %s", err)

@@ -119,10 +119,48 @@
     </div>
 
     <script>
+        let currentPage = 1;
+        let currentSearchParams = {
+            keyword: '',
+            startDate: '',
+            endDate: '',
+            type: ''
+        };
+
+        // 从 URL 参数中获取搜索条件
+        function getSearchParamsFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return {
+                keyword: urlParams.get('keyword') || '',
+                start_date: urlParams.get('start_date') || '',
+                end_date: urlParams.get('end_date') || '',
+                type: urlParams.get('type') || '',
+                page: parseInt(urlParams.get('page')) || 1
+            };
+        }
+
+        // 更新 URL 参数
+        function updateURLParams(params) {
+            const urlParams = new URLSearchParams();
+            if (params.keyword) urlParams.set('keyword', params.keyword);
+            if (params.start_date) urlParams.set('start_date', params.start_date);
+            if (params.end_date) urlParams.set('end_date', params.end_date);
+            if (params.type) urlParams.set('type', params.type);
+            if (params.page && params.page > 1) urlParams.set('page', params.page);
+            
+            const newURL = `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`;
+            window.history.pushState({}, '', newURL);
+        }
+
         // 获取邮件列表数据
-        async function fetchMails(page = 1, pageSize = 20) {
+        async function fetchMails(page = 1, pageSize = 20, searchParams = {}) {
             try {
-                const response = await fetch(`/api/mails?page=${page}&page_size=${pageSize}`);
+                const params = new URLSearchParams({
+                    page: page,
+                    page_size: pageSize,
+                    ...searchParams
+                });
+                const response = await fetch(`/api/mails?${params.toString()}`);
                 const data = await response.json();
                 return data;
             } catch (error) {
@@ -161,13 +199,115 @@
             `).join('');
         }
 
-        // 页面加载时获取邮件列表
-        window.addEventListener('load', async () => {
-            const data = await fetchMails();
+        // 更新分页信息
+        function updatePagination(total) {
+            const totalPages = Math.ceil(total / 20);
+            document.querySelector('.sm\\:hidden').innerHTML = `
+                <button onclick="changePage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''} 
+                    class="px-4 py-2 border rounded-lg text-sm font-medium ${currentPage <= 1 ? 'text-gray-400' : 'text-gray-700 hover:bg-gray-50'}">
+                    上一页
+                </button>
+                <button onclick="changePage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}
+                    class="px-4 py-2 border rounded-lg text-sm font-medium ${currentPage >= totalPages ? 'text-gray-400' : 'text-gray-700 hover:bg-gray-50'}">
+                    下一页
+                </button>
+            `;
+
+            const paginationText = document.querySelector('.text-sm.text-gray-700');
+            paginationText.innerHTML = `
+                显示第 <span class="font-medium">${(currentPage - 1) * 20 + 1}</span> 到 
+                <span class="font-medium">${Math.min(currentPage * 20, total)}</span> 条，
+                共 <span class="font-medium">${total}</span> 条
+            `;
+
+            const paginationNav = document.querySelector('.inline-flex.rounded-md');
+            let paginationHtml = `
+                <button onclick="changePage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''}
+                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage <= 1 ? 'text-gray-400' : 'text-gray-500 hover:bg-gray-50'}">
+                    上一页
+                </button>
+            `;
+
+            for (let i = 1; i <= Math.min(totalPages, 3); i++) {
+                paginationHtml += `
+                    <button onclick="changePage(${i})" 
+                        class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium ${currentPage === i ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-50'}">
+                        ${i}
+                    </button>
+                `;
+            }
+
+            paginationHtml += `
+                <button onclick="changePage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}
+                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage >= totalPages ? 'text-gray-400' : 'text-gray-500 hover:bg-gray-50'}">
+                    下一页
+                </button>
+            `;
+            paginationNav.innerHTML = paginationHtml;
+        }
+
+        // 切换页码
+        async function changePage(page) {
+            if (page < 1) return;
+            currentPage = page;
+            currentSearchParams.page = page;
+            updateURLParams({ ...currentSearchParams, page });
+            
+            const data = await fetchMails(currentPage, 20, currentSearchParams);
             if (data) {
                 renderMailList(data.data);
+                updatePagination(data.total);
+            }
+        }
+
+        // 搜索邮件
+        async function searchMails() {
+            const keyword = document.querySelector('input[type="text"]').value;
+            const startDate = document.querySelector('input[type="date"]:nth-child(1)').value;
+            const endDate = document.querySelector('input[type="date"]:nth-child(2)').value;
+            const type = document.querySelector('select').value;
+
+            currentSearchParams = {
+                keyword,
+                start_date: startDate,
+                end_date: endDate,
+                type
+            };
+            currentPage = 1;
+
+            updateURLParams(currentSearchParams);
+
+            const data = await fetchMails(currentPage, 20, currentSearchParams);
+            if (data) {
+                renderMailList(data.data);
+                updatePagination(data.total);
+            }
+        }
+
+        // 填充表单
+        function fillFormFromParams(params) {
+            document.querySelector('input[type="text"]').value = params.keyword || '';
+            document.querySelector('input[type="date"]:nth-child(1)').value = params.start_date || '';
+            document.querySelector('input[type="date"]:nth-child(2)').value = params.end_date || '';
+            document.querySelector('select').value = params.type || '';
+        }
+
+        // 绑定搜索按钮事件
+        document.querySelector('button').addEventListener('click', searchMails);
+
+        // 页面加载时获取邮件列表
+        window.addEventListener('load', async () => {
+            const params = getSearchParamsFromURL();
+            currentPage = params.page;
+            currentSearchParams = params;
+            fillFormFromParams(params);
+
+            const data = await fetchMails(currentPage, 20, currentSearchParams);
+            if (data) {
+                renderMailList(data.data);
+                updatePagination(data.total);
             }
         });
     </script>
 </body>
-</html> 
+</html>

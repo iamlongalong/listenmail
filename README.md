@@ -22,6 +22,11 @@ ListenMail 是一个灵活的邮件监听和分发工具，支持多种邮件协
 go install github.com/iamlongalong/listenmail/cmd/listenmail@latest
 ```
 
+在 docker 中交叉编译
+```bash
+docker run --rm -v "$PWD":/go/src/app -w /go/src/app golang:1.21  CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build cmd/listenmail/listenmail.go
+```
+
 ## 配置
 
 创建 `config.yaml` 文件：

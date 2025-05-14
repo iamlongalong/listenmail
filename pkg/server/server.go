@@ -128,10 +128,11 @@ type QueryParams struct {
 	PageSize  int    `form:"page_size,default=20"`
 	MailID    uint   `form:"mail_id"`
 	MessageID string `form:"message_id"`
-	FromDate  string `form:"from_date"`
-	ToDate    string `form:"to_date"`
+	StartDate string `form:"start_date"`
+	EndDate   string `form:"end_date"`
 	From      string `form:"from"`
 	To        string `form:"to"`
+	Keyword   string `form:"keyword"`
 }
 
 // listMails handles GET /api/mails
@@ -165,11 +166,11 @@ func (s *Server) listMails(c *gin.Context) {
 	if params.MessageID != "" {
 		query = query.Where("message_id = ?", params.MessageID)
 	}
-	if params.FromDate != "" {
-		query = query.Where("date >= ?", params.FromDate)
+	if params.StartDate != "" {
+		query = query.Where("date >= ?", params.StartDate)
 	}
-	if params.ToDate != "" {
-		query = query.Where("date <= ?", params.ToDate)
+	if params.EndDate != "" {
+		query = query.Where("date <= ?", params.EndDate)
 	}
 	if params.From != "" {
 		query = query.Joins("JOIN db_addresses a_from ON a_from.mail_id = db_mails.id AND a_from.type = 'from'").
@@ -178,6 +179,12 @@ func (s *Server) listMails(c *gin.Context) {
 	if params.To != "" {
 		query = query.Joins("JOIN db_addresses a_to ON a_to.mail_id = db_mails.id AND a_to.type = 'to'").
 			Where("a_to.address LIKE ?", "%"+params.To+"%")
+	}
+	if params.Keyword != "" {
+		query = query.Where("(subject LIKE ? OR text_content LIKE ? OR html_content LIKE ?)",
+			"%"+params.Keyword+"%",
+			"%"+params.Keyword+"%",
+			"%"+params.Keyword+"%")
 	}
 
 	// Count total records

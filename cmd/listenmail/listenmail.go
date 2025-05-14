@@ -33,7 +33,7 @@ func main() {
 	}
 
 	var config types.ConfigFile
-	if err := yaml.Unmarshal(data, &config); err != nil {
+	if err = yaml.Unmarshal(data, &config); err != nil {
 		log.Fatalf("Error parsing config: %v", err)
 	}
 
@@ -42,7 +42,7 @@ func main() {
 	defer disp.Close() // 确保在程序退出时关闭dispatcher
 
 	// Add example handler
-	if err := disp.AddHandlers(
+	if err = disp.AddHandlers(
 		handlers.NewLogHandler(),
 		handler.SaveHandler(config.Save.Dir),
 		handler.CursorCodeHandler(),
@@ -64,7 +64,7 @@ func main() {
 		if err != nil {
 			log.Printf("Error creating source %s: %v", cfg.Name, err)
 		}
-		if err := src.Start(); err != nil {
+		if err = src.Start(); err != nil {
 			log.Printf("Error starting source %s: %v", cfg.Name, err)
 		}
 		activeSources = append(activeSources, src)
@@ -79,7 +79,7 @@ func main() {
 		if err != nil {
 			log.Printf("Error creating source %s: %v", cfg.Name, err)
 		}
-		if err := src.Start(); err != nil {
+		if err = src.Start(); err != nil {
 			log.Printf("Error starting source %s: %v", cfg.Name, err)
 		}
 		activeSources = append(activeSources, src)
@@ -94,7 +94,7 @@ func main() {
 		if err != nil {
 			log.Printf("Error creating source %s: %v", cfg.Name, err)
 		}
-		if err := src.Start(); err != nil {
+		if err = src.Start(); err != nil {
 			log.Printf("Error starting source %s: %v", cfg.Name, err)
 		}
 		activeSources = append(activeSources, src)
@@ -109,7 +109,7 @@ func main() {
 		if err != nil {
 			log.Printf("Error creating source %s: %v", cfg.Name, err)
 		}
-		if err := src.Start(); err != nil {
+		if err = src.Start(); err != nil {
 			log.Printf("Error starting source %s: %v", cfg.Name, err)
 		}
 		activeSources = append(activeSources, src)

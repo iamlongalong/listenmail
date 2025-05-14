@@ -12,10 +12,10 @@ import (
 type DBMail struct {
 	gorm.Model
 	MessageID               string    `gorm:"index;type:text"`
-	Subject                 string    `gorm:"type:text"`
+	Subject                 string    `gorm:"index;type:text"`
 	Date                    time.Time `gorm:"index"`
-	TextContent             string    `gorm:"type:text"`
-	HTMLContent             string    `gorm:"type:text"`
+	TextContent             string    `gorm:"index;type:text"`
+	HTMLContent             string    `gorm:"index;type:text"`
 	ContentType             string    `gorm:"type:text"`
 	ContentTransferEncoding string    `gorm:"type:text"`
 	ReplyTo                 string    `gorm:"type:text"`
